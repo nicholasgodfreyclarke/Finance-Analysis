@@ -6,6 +6,7 @@ import csv
 import os
 import xml.etree.ElementTree as ET
 import numpy as np
+from datetime import datetime
 
 # Brief explanation:
 # I have converted the pdf into xml, pdf is a graphical format rather a textual format really
@@ -81,7 +82,13 @@ Balance = positioning(data, column_anchors['Balance €'][0], 1000000, column_an
 
 #Split out Date from Details (they were incorrectly merged in the pdf parsing)
 for i in Date:
+
     Details += [[i[0][11:],] + i[1:],]
+
+    i[0] = i[0][:11]
+    # Convert date to a more usable format
+    d = datetime.strptime(i[0], '%d %b %Y')
+    i[0] = d.strftime('%d/%m/%Y')
 
 fields = [('Value','S30'), ('hor_start',float), ('vert_start',float), ('hor_end',float), ('vert_end',float)]
 
@@ -101,10 +108,11 @@ for j in range(Details_array.shape[0]):
     filled = False
     for i in Date:
         if ( Details_array[j][2] - height/2 ) < i[2] < ( Details_array[j][2] + height/2 ):
-            output_array[j][0] = i[0][:11] # Again trimming the date falsely concatenated with details
+            output_array[j][0] = i[0]
             filled = True
+            last_date = i[0]
     if not filled:
-        output_array[j][0] = ""
+        output_array[j][0] = last_date # Associate each row with it's date for easier analysis
 
 #Debit
 for j in range(Details_array.shape[0]):

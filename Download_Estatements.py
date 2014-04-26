@@ -5,6 +5,19 @@ __author__ = 'nicholasclarke'
 from sys import argv
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+import os
+
+current_dir = os.path.dirname(os.path.realpath(__file__))
+
+newpath = current_dir + "/estatements"
+if not os.path.exists(newpath):
+    os.makedirs(newpath)
+
+print newpath
+
+#print "python \"" + current_dir + "/Download_Estatements.py\" " + newpath
+
+#os.system("python \"" + current_dir + "/Download_Estatements.py\" " + "\"" + newpath + "\"")
 
 #download_folder = argv[1]
 
@@ -71,6 +84,4 @@ for j in range(len(option_list)):
 
 browser.quit()
 
-# Export data to csv (or even excel)
-# Use matlibplot to plot wealth trend over time.
-# Subdivide in categories (search by 'tesco' for example)
+

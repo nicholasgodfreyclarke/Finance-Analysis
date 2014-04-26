@@ -8,7 +8,8 @@ from pdfminer.layout import LAParams
 
 os.chdir('/Users/nicholasclarke/Code/PycharmProjects/AIB project/estatements')
 
-print os.getcwd()
+# Firefox downloads files as filename.pdf.part so rename them to filename.pdf to make them usable.
+[os.rename(f, f.replace('.part', '')) for f in os.listdir('.')]
 
 # Set parameters
 pagenos = set()

@@ -21,3 +21,7 @@ page 2
 Assumptions:
 -   Each page will have Date, Details, Debit €, Credit €, Balance €
     I use these to anchor my coordinates.
+
+# Export data to csv (or even excel)
+# Use matlibplot to plot wealth trend over time.
+# Subdivide in categories (search by 'tesco' for example)
