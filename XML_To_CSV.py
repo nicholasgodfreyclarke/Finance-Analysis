@@ -2,11 +2,9 @@
 __author__ = 'nicholasclarke'
 #!/usr/bin/python
 
-import re
 import csv
 import os
 import xml.etree.ElementTree as ET
-from collections import OrderedDict
 import numpy as np
 
 # Brief explanation:
@@ -81,51 +79,80 @@ Credit = positioning(data, column_anchors['Credit €'][0], column_anchors['Bala
 
 Balance = positioning(data, column_anchors['Balance €'][0], 1000000, column_anchors['Date'][1], 75)
 
+#Split out Date from Details (they were incorrectly merged in the pdf parsing)
 for i in Date:
     Details += [[i[0][11:],] + i[1:],]
 
-print Details
-fields = [('Value','S20'), ('hor_start',float), ('vert_start',float), ('hor_end',float), ('vert_end',float)]
-# dtype = [('name', 'S10'), ('height', float), ('age', int)]
-Details_array = np.array(Details, dtype=fields)
-# np.dtype([('R','u1'), ('G','u1'), ('B','u1'), ('A','u1')])
-# print np.sort(Details_array, order = 'hor_start')
+fields = [('Value','S30'), ('hor_start',float), ('vert_start',float), ('hor_end',float), ('vert_end',float)]
 
-print Details_array
+Details_array = np.array([(a,b,c,d,e) for (a,b,c,d,e) in Details], dtype=fields)
+
+Details_array = np.sort(Details_array, order='vert_start')[::-1]
+
+output_array = np.empty((Details_array.shape[0],5), dtype = 'S30')
+
+for i in range(Details_array.shape[0]):
+    output_array[i][1] = Details_array[i][0]
+
+height = float(Date[0][3] - Date[0][1])
+
+#Date
+for j in range(Details_array.shape[0]):
+    filled = False
+    for i in Date:
+        if ( Details_array[j][2] - height/2 ) < i[2] < ( Details_array[j][2] + height/2 ):
+            output_array[j][0] = i[0][:11] # Again trimming the date falsely concatenated with details
+            filled = True
+    if not filled:
+        output_array[j][0] = ""
+
+#Debit
+for j in range(Details_array.shape[0]):
+    filled = False
+    for i in Debit:
+        if ( Details_array[j][2] - height/2 ) < i[2] < ( Details_array[j][2] + height/2 ):
+            output_array[j][2] = i[0]
+            filled = True
+    if not filled:
+        output_array[j][2] = ""
+
+#Credit
+for j in range(Details_array.shape[0]):
+    filled = False
+    for i in Credit:
+        if ( Details_array[j][2] - height/2 ) < i[2] < ( Details_array[j][2] + height/2 ):
+            output_array[j][3] = i[0]
+            filled = True
+    if not filled:
+        output_array[j][3] = ""
+
+#Balance
+for j in range(Details_array.shape[0]):
+    filled = False
+    for i in Balance:
+        if ( Details_array[j][2] - height/2 ) < i[2] < ( Details_array[j][2] + height/2 ):
+            output_array[j][4] = i[0]
+            filled = True
+    if not filled:
+        output_array[j][4] = ""
+
+# print output_array
+
 with open('test.csv','wb') as f:
     writer = csv.writer(f)
-    for i in Details:
+    for i in output_array:
         writer.writerow(i)
 
 #
 # # Obtain the height of the data by subtracting the ending vertical coordinate of a character
 # # from it's starting vertical coordinate.
 # # Look at this fucking hackery... (I think I have a problem with dictionaries and trying to use them as lists)
-# height = Date[Date.keys()[0]][3] - Date[Date.keys()[0]][1]
-#
-# test = OrderedDict(sorted(Date.items(), key=lambda t: t[1], reverse=True))
-#
-#
-#
-# print test
-#
-# print "\n"*10
-#
-# print test['14 Feb 2014 BALANCE FORWARD']
-#
-# print test['17 Feb 2014 Interest Rate']
-#
-# print test['14 Feb 2014 BALANCE FORWARD'][3] - test['17 Feb 2014 Interest Rate'][1]
-#
-# for i in test:
-#     Details[i[11:]] = Date[i]
-#
-# Ordered_Details = OrderedDict(sorted(Details.items(), key=lambda t: t[1], reverse=True))
-#
-#
+
+
 # # If it's within half the height it should be admissible
 #
 # #Okay, better idea. Create the details row and then fit the other rows to it!
 # #First separate out dates, and make into correct format
 #
 # # Can't use dicts because of duplication in keys!
+# Trim leading spaces in details column
