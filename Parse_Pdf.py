@@ -11,24 +11,23 @@ os.chdir('/Users/nicholasclarke/Code/PycharmProjects/AIB project/estatements/est
 # Firefox downloads files as filename.pdf.part so rename them to filename.pdf to make them usable.
 [os.rename(f, f.replace('.part', '')) for f in os.listdir('.')]
 
-# Set parameters
-pagenos = set()
-maxpages = 0
-password = ''
-imagewriter = None
-codec = 'utf-8'
-caching = True
-laparams = LAParams()
-
-rsrcmgr = PDFResourceManager(caching=caching)
-
 # Convert to XML as it retains the most information about text position (compared to text, html, etc).
 
 for fname in os.listdir('.'):
 
     if fname[-3:] == "pdf":
 
+        # Set parameters
+        pagenos = set()
+        maxpages = 0
+        password = ''
+        imagewriter = None
+        codec = 'utf-8'
+        caching = True
+        laparams = LAParams()
         outfile = fname + '.txt'
+
+        rsrcmgr = PDFResourceManager(caching=caching)
 
         outfp = file(outfile, 'w')
 
@@ -43,5 +42,5 @@ for fname in os.listdir('.'):
             interpreter.process_page(page)
         fp.close()
 
-device.close()
-outfp.close()
+        device.close()
+        outfp.close()

@@ -16,9 +16,9 @@ import re
 # Luckily the xml is structured in that the characters of each word are all children of the same
 # parent node (in most cases).
 
-os.chdir('/Users/nicholasclarke/Code/PycharmProjects/AIB project/estatements')
+os.chdir('/Users/nicholasclarke/Code/PycharmProjects/Test')
 
-tree = ET.parse("kecrfK9R.txt")
+tree = ET.parse("8gcR5dtW.pdf.txt")
 
 root = tree.getroot()
 
