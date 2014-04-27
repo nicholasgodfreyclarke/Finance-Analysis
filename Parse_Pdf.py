@@ -1,46 +1,54 @@
 __author__ = 'nicholasclarke'
-
 import os
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
-from pdfminer.converter import XMLConverter #, HTMLConverter, TextConverter
+from pdfminer.converter import XMLConverter
 from pdfminer.layout import LAParams
 
-os.chdir('/Users/nicholasclarke/Code/PycharmProjects/AIB project/estatements/estatements2')
+def parse_pdfs(pdf_filenames):
+    # Set parameters
+    pagenos = set()
+    maxpages = 0
+    password = ''
+    imagewriter = None
+    codec = 'utf-8'
+    caching = True
+    laparams = LAParams()
 
-# Firefox downloads files as filename.pdf.part so rename them to filename.pdf to make them usable.
-[os.rename(f, f.replace('.part', '')) for f in os.listdir('.')]
+    rsrcmgr = PDFResourceManager(caching=caching)
 
-# Convert to XML as it retains the most information about text position (compared to text, html, etc).
+    # Convert to XML as it retains the most information about text position (compared to text, html, etc).
+    for pdf_file in pdf_filenames:
+        fname, ext = os.path.splitext(pdf_file)
+        outfile = fname + '.xml'
+        with open(pdf_file, 'rb') as fp, open(outfile, 'w') as outfp:
 
-for fname in os.listdir('.'):
-
-    if fname[-3:] == "pdf":
-
-        # Set parameters
-        pagenos = set()
-        maxpages = 0
-        password = ''
-        imagewriter = None
-        codec = 'utf-8'
-        caching = True
-        laparams = LAParams()
-        outfile = fname + '.txt'
-
-        rsrcmgr = PDFResourceManager(caching=caching)
-
-        outfp = file(outfile, 'w')
-
-        device = XMLConverter(rsrcmgr, outfp, codec=codec, laparams=laparams,
+            device = XMLConverter(rsrcmgr, outfp, codec=codec, laparams=laparams,
                           imagewriter=imagewriter)
 
-        fp = file(fname, 'rb')
-        interpreter = PDFPageInterpreter(rsrcmgr, device)
-        for page in PDFPage.get_pages(fp, pagenos,
+            interpreter = PDFPageInterpreter(rsrcmgr, device)
+            for page in PDFPage.get_pages(fp, pagenos,
                                       maxpages=maxpages, password=password,
                                       caching=caching, check_extractable=True):
-            interpreter.process_page(page)
-        fp.close()
+                interpreter.process_page(page)
 
-        device.close()
-        outfp.close()
+            device.close()
+
+
+if __name__ == '__main__':
+    import sys
+    pdf_filenames = []
+    if len(sys.argv) <= 1:
+        exit('Requires a PDF file or directory as argument.')
+    arg = sys.argv[1]
+    if os.path.exists(arg) and arg.endswith('.pdf') or arg.endswith('.pdf.part'):
+        pdf_filenames.append(os.path.abspath(arg))
+    elif os.path.exists(arg):
+        all_transactions = []
+        for filename in os.listdir(arg):
+            if filename.endswith('.pdf') or arg.endswith('.pdf.part'):
+                pdf_filenames.append(os.path.join(os.path.abspath(arg), filename))
+    else:
+        exit('Invalid PDF file or no such file or directory.')
+
+    parse_pdfs(pdf_filenames)
