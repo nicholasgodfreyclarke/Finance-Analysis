@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="8d20453a-3cd0-4217-895a-bcb113171917" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="Finance-Analysis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -47,7 +46,7 @@
       <file leaf-file-name="README.md" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="15" column="17" selection-start="642" selection-end="642" vertical-scroll-proportion="0.3323486" vertical-offset="0" max-vertical-offset="677">
+            <state line="6" column="0" selection-start="163" selection-end="163" vertical-scroll-proportion="0.13293944" vertical-offset="0" max-vertical-offset="677">
               <folding />
             </state>
           </provider>
@@ -598,7 +597,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="17" selection-start="642" selection-end="642" vertical-scroll-proportion="0.3323486" vertical-offset="0" max-vertical-offset="677">
+        <state line="6" column="0" selection-start="163" selection-end="163" vertical-scroll-proportion="0.13293944" vertical-offset="0" max-vertical-offset="677">
           <folding />
         </state>
       </provider>
