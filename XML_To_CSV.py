@@ -7,6 +7,7 @@ import os
 import xml.etree.ElementTree as ET
 import numpy as np
 from datetime import datetime
+import re
 
 # Brief explanation:
 # I have converted the pdf into xml, pdf is a graphical format rather a textual format really
@@ -17,7 +18,7 @@ from datetime import datetime
 
 os.chdir('/Users/nicholasclarke/Code/PycharmProjects/AIB project/estatements')
 
-tree = ET.parse("ALNqYh9w.txt")
+tree = ET.parse("kecrfK9R.txt")
 
 root = tree.getroot()
 
@@ -34,18 +35,7 @@ for child in root.findall("./page/textbox/textline"):
     for grandchild in child.findall("./text"):
         value += grandchild.text
 
-    # print value, "\n", coord.split(",")
-
     data += ([value[:-1].encode(encoding='UTF-8'),] + [float(i) for i in coord.split(",")], )
-
-# Anchor with Date, Details, Debit €, Credit €, Balance €
-
-# print "hey"
-# print data['Date']
-# print data['Details']
-# print data['Debit €']
-# print data['Credit €']
-# print data['Balance €']
 
 # The coordinate system:
 # First coordinate: starting horizontal position of character (from left)
@@ -63,8 +53,8 @@ def positioning(data, x_left_bound, x_right_bound, y_top_bound, y_bottom_bound):
             column += (element,)
     return column
 
+# Anchor with Date, Details, Debit €, Credit €, Balance €
 column_identifiers = ('Date', 'Details', 'Debit €', 'Credit €', 'Balance €')
-
 column_anchors = {}
 for i in data:
     if i[0] in column_identifiers:
@@ -80,14 +70,22 @@ Credit = positioning(data, column_anchors['Credit €'][0], column_anchors['Bala
 
 Balance = positioning(data, column_anchors['Balance €'][0], 1000000, column_anchors['Date'][1], 75)
 
+
+date_pattern = re.compile("\d{1,2}\s\w{3}\s\d{4}")
+
 #Split out Date from Details (they were incorrectly merged in the pdf parsing)
 for i in Date:
+
+    re_date = date_pattern.search(i[0]).group(0)
+
+    if len(re_date) == 10:
+        re_date = "0" + re_date
 
     Details += [[i[0][11:],] + i[1:],]
 
     i[0] = i[0][:11]
     # Convert date to a more usable format
-    d = datetime.strptime(i[0], '%d %b %Y')
+    d = datetime.strptime(re_date, '%d %b %Y')
     i[0] = d.strftime('%d/%m/%Y')
 
 fields = [('Value','S30'), ('hor_start',float), ('vert_start',float), ('hor_end',float), ('vert_end',float)]

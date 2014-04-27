@@ -6,14 +6,14 @@ from sys import argv
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import os
+import time
+import glob
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
-newpath = current_dir + "/estatements"
+newpath = current_dir + "/estatements2"
 if not os.path.exists(newpath):
     os.makedirs(newpath)
-
-print newpath
 
 #print "python \"" + current_dir + "/Download_Estatements.py\" " + newpath
 
@@ -21,7 +21,7 @@ print newpath
 
 #download_folder = argv[1]
 
-download_folder = "/Users/nicholasclarke/Code/PycharmProjects/AIB project/estatements"
+download_folder = newpath
 
 #Enter login details here.
 registration_number = ''
@@ -69,6 +69,7 @@ for option in browser.find_element_by_id('selectedDate').find_elements_by_tag_na
     option_list += (option.text,)
 
 i = 0
+download_count = 0
 # Loop through every month and download every statement
 for j in range(len(option_list)):
     el = browser.find_element_by_id('selectedDate')
@@ -79,8 +80,13 @@ for j in range(len(option_list)):
             for k in browser.find_elements_by_class_name('aibLinkStyle01'):
                 if k.text == "Save":
                     k.click()
+                    download_count += 1
             i += 1
             break
+
+# Wait for files to finish downloading
+while len(glob.glob1(newpath,"*.part")) != download_count:
+    pass
 
 browser.quit()
 
