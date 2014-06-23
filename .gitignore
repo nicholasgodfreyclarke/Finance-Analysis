@@ -39,3 +39,7 @@ Thumbs.db
 # IDE Settings #
 #######################
 .idea/
+
+# Others #
+Estatements/
+Plans.txt
