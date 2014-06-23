@@ -3,11 +3,26 @@ Finance-Analysis
 
 Project to download historical estatements from AIB, parse the pdfs into csv and perform analysis on the results.
 
+Requirements:
+Firefox
+Selenium package
+pdfminer package
+numpy package
+
 Four stages:
 
 1.  Download_Estatements.py
 
     Log into AIB, navigate to estatement records and download all available.
+
+    Usage:
+
+    AIB requires login information so they are passed by command line arguments.
+    
+    python Download_Estatements.py registration_number pac_number phone_number_last_four
+
+    Example:
+    python Download_Estatements.py 34556622 8923 0192
 
 2.  Parse_Pdf.py
 
