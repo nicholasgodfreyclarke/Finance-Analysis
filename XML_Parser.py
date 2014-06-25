@@ -2,18 +2,15 @@
 __author__ = 'nicholasclarke'
 #!/usr/bin/python
 
-import csv
 import os
 import xml.etree.ElementTree as ET
+import re
 import numpy as np
 from datetime import datetime
+import csv
 import StringIO
-import re
-import pprint
 
-# Highly recommend pprint for debugging here.
-
-def Parse_XML(xml_file):
+def Parse_XML(xml_file, output_type):
 
     def extract_string_coordinates(xml_file):
         """
@@ -78,6 +75,9 @@ def Parse_XML(xml_file):
         return anchor_coordinates
 
     def Catagorise(string_data):
+        """
+        Sort strings into relevant columns - Date, Details, Debit, Credit
+        """
 
         catagories = {'Date':list(), 'Details':list(), 'Debit €':list(), 'Credit €':list(), 'Balance €':list()}
 
@@ -89,7 +89,7 @@ def Parse_XML(xml_file):
         
         # Collect all monetary transaction amounts - Debit, Credit, Balance
         for candidate in string_data:
-            if candidate[1] > anchors['Details']['hor_end'] and candidate[2] < anchors['Details']['ver_start'] \
+            if candidate[1] > anchors['Debit €']['hor_start'] and candidate[2] < anchors['Details']['ver_start'] \
                     and transaction_pattern.match(candidate[0]):
                 monetary_admissable_list += (candidate,)
         
@@ -109,7 +109,9 @@ def Parse_XML(xml_file):
                 catagories['Credit €'] += (candidate,)
 
             else:
-                print 'Categorisation error: ' + candidate
+
+                print 'Categorisation error: ' + str(candidate)
+                print xml_file
 
         date_pattern = re.compile("\d{1,2}\s\w{3}\s\d{4}")
 
@@ -134,7 +136,7 @@ def Parse_XML(xml_file):
                 catagories['Date'] += ([trimmed_date,] + candidate[1:],)
 
         lower_bound = 10000
-        # Now to just clean up the Details column
+        # Now to just clean up the Details column, remove text at the bottom of the page from Details
         for string in catagories['Balance €']:
             if string[2] < lower_bound:
                 lower_bound = string[2]
@@ -142,28 +144,104 @@ def Parse_XML(xml_file):
 
         return catagories
 
-    def sort_numpy(categories):
-        
+    def convert_dates(categories):
+        """
+        Convert dates from the 1 Jun 2014 format to the YYYY-MM-DD sqlite3 compatible date format.
+        """
+        for date in catagories['Date']:
 
+            date[0] = datetime.strptime(date[0], '%d %b %Y').strftime('%Y-%m-%d')
+
+        return catagories
+
+    def sorted_details_array(categories):
+        """
+        There are no null values in the Details columns, so:
+        first: sort details by page,ver_start position
+        second: insert into numpy array
+        third fit other columns to it (they will have the same ver_start pos as they are the same row) - is this robust?
+        """
+
+        numpy_fields = [('Value','S30'), ('vert_start',float), ('page_no',int)]
+
+        # multiply vert_start * -1 to get correct sorting behaviour (vert_start is from bottom of page)
+        details_data = [[x[0],] + [-1 * float(x[2]),] + [x[5],] for x in catagories['Details']]
+
+        np_sort_array = np.array([(a,b,c) for (a,b,c) in details_data], dtype=numpy_fields)
+
+        np_sort_array = np.sort(np_sort_array, order=['page_no', 'vert_start',])
+
+        return np_sort_array
+
+    def final_array(sorted_details_array, catagories):
+
+        numpy_fields = [('Date','S30'), ('Details','S30'), ('Debit €', float), ('Credit €', float),('Balance €',float),
+                        ('vert_start',float), ('page_no',int)]
+        output_array = np.zeros(sorted_details_array.shape[0],dtype = numpy_fields)
+
+        # Fill in details
+        for i in range(sorted_details_array.shape[0]):
+            output_array['Details'][i] = sorted_details_array[i][0]
+            output_array['vert_start'][i] = sorted_details_array[i][1]
+            output_array['page_no'][i] = sorted_details_array[i][2]
+
+        def fill_array(column):
+            """
+            Fill in date, debit, credit, balance
+            Check that they have the same vertical height and page no as the details
+            """
+            for i in range(sorted_details_array.shape[0]):
+                for string_info in catagories[column]:
+                    if -1 * string_info[2] == output_array['vert_start'][i] and string_info[5] == output_array['page_no'][i]:
+                        output_array[column][i] = string_info[0]
+
+        fill_array('Date')
+        fill_array('Debit €')
+        fill_array('Credit €')
+        fill_array('Balance €')
+
+        # Associate a date with each row for analysis
+        current_date = ''
+        for row in range(output_array.shape[0]):
+            if output_array['Date'][row] != '':
+                current_date = output_array['Date'][row]
+            else:
+                output_array['Date'][row] = current_date
+
+        # Delete row with superfluous data (exchange rates, atm withdrawal times, etc)
+        delete_row_list = list()
+        for row in range(output_array.shape[0]):
+            if output_array['Debit €'][row] == 0 and output_array['Credit €'][row] == 0:
+                delete_row_list += (row,)
+        output_array = np.delete(output_array,delete_row_list,0)
+
+        return output_array
 
     # Debugging
 
+    print "Parsing " + xml_file + " to " + output_type
     string_data = extract_string_coordinates(xml_file)
-    # for i in string_data:
-    #     pprint.pprint(i)
 
     catagories = Catagorise(string_data)
 
-    sort_numpy(catagories)
+    catagories = convert_dates(catagories)
 
-    # print column_anchors(string_data)
+    details_array = sorted_details_array(catagories)
 
+    output_data = final_array(details_array, catagories)
+
+    if output_type == 'csv':
+        with open('Estatements.csv','a') as f:
+            writer = csv.writer(f)
+            for row in output_data:
+                writer.writerow([row[0],row[1],row[2],row[3],row[4]])
 
 if __name__ == '__main__':
     import sys
     xml_filenames = []
-    if len(sys.argv) <= 1:
-        exit('Requires a XML file or directory as argument.')
+    if len(sys.argv) <= 2:
+        exit('Requires a XML file or directory as argument and output type (csv/db)')
+
     arg = sys.argv[1]
     if os.path.exists(arg) and arg.endswith('.xml'):
         xml_filenames.append(os.path.abspath(arg))
@@ -175,8 +253,9 @@ if __name__ == '__main__':
     else:
         exit('Invalid XML file or no such file or directory.')
 
+    output_type = sys.argv[2]
+    if output_type != 'csv' and output_type != 'db':
+        exit('Please specify output as csv/db')
+
     for xml_file in xml_filenames:
-        Parse_XML(xml_file)
-    # for xml_file in xml_filenames:
-    #     csv_data = XML2CSV(xml_file)
-    #     print csv_data
+        Parse_XML(xml_file,output_type)
