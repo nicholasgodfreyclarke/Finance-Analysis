@@ -15,3 +15,4 @@ def query(sql_string):
         print row
 
     conn.close()
+
