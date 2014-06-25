@@ -7,10 +7,10 @@ import xml.etree.ElementTree as ET
 import re
 import numpy as np
 from datetime import datetime
+import sqlite3
 import csv
-import StringIO
 
-def Parse_XML(xml_file, output_type):
+def Parse_XML(xml_file, output_type,account_name):
 
     def extract_string_coordinates(xml_file):
         """
@@ -217,9 +217,30 @@ def Parse_XML(xml_file, output_type):
 
         return output_array
 
-    # Debugging
+    def insert_into_database(output_data):
+
+        conn = sqlite3.connect('AIB_Database.db')
+
+        c = conn.cursor()
+
+        sql_update_data = list()
+
+        for row in output_data:
+            sql_update_data += ([row[0],row[1],row[2],row[3],row[4], account_name,row[3]-row[2]],)
+
+        # Create table
+        c.execute('''CREATE TABLE IF NOT EXISTS Transactions
+                     (Date text, Details text, Debit real, Credit real, Balance real, Net_Transaction real, Account_Name text)
+                     ''')
+
+        c.executemany('INSERT INTO Transactions VALUES (?,?,?,?,?,?,?)', sql_update_data)
+
+        conn.commit()
+
+        conn.close()
 
     print "Parsing " + xml_file + " to " + output_type
+
     string_data = extract_string_coordinates(xml_file)
 
     catagories = Catagorise(string_data)
@@ -234,13 +255,19 @@ def Parse_XML(xml_file, output_type):
         with open('Estatements.csv','a') as f:
             writer = csv.writer(f)
             for row in output_data:
-                writer.writerow([row[0],row[1],row[2],row[3],row[4]])
+                # Use round due to how floats are stored in numpy
+                writer.writerow([row[0],row[1],round(row[2],2),round(row[3],2),round(row[4],2), account_name,round(row[3]-row[2],2)])
+    else:
+        insert_into_database(output_data)
+
+    print "Finished!"
+
 
 if __name__ == '__main__':
     import sys
     xml_filenames = []
-    if len(sys.argv) <= 2:
-        exit('Requires a XML file or directory as argument and output type (csv/db)')
+    if len(sys.argv) <= 3:
+        exit('Requires a XML file or directory as argument, output type (csv/db) and account name')
 
     arg = sys.argv[1]
     if os.path.exists(arg) and arg.endswith('.xml'):
@@ -257,5 +284,7 @@ if __name__ == '__main__':
     if output_type != 'csv' and output_type != 'db':
         exit('Please specify output as csv/db')
 
+    account_name = sys.argv[3]
+
     for xml_file in xml_filenames:
-        Parse_XML(xml_file,output_type)
+        Parse_XML(xml_file,output_type,account_name)
