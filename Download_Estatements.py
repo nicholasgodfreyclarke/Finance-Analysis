@@ -8,7 +8,10 @@ from selenium.webdriver.common.keys import Keys
 import os
 import glob
 
-#Enter login details here.
+if len(sys.argv) != 4:
+    exit("Usage: python Download_Estatements.py RegistrationNumber PacNumber LastFourDigitsOfPhoneNumber")
+
+#Read command line arguments.
 registration_number = sys.argv[1]
 pac_number = sys.argv[2]
 phone_number_last_four = sys.argv[3]
@@ -19,19 +22,11 @@ newpath = current_dir + "/Estatements/"
 if not os.path.exists(newpath):
     os.makedirs(newpath)
 
-#print "python \"" + current_dir + "/Download_Estatements.py\" " + newpath
-
-#os.system("python \"" + current_dir + "/Download_Estatements.py\" " + "\"" + newpath + "\"")
-
-#download_folder = argv[1]
-
-download_folder = newpath
-
 #Set up automatic downloading (as pdf) so we don't have to interact with the firefox manually
 fp = webdriver.FirefoxProfile()
 fp.set_preference("browser.download.folderList", 2)  # The 2 parameter sets a custom download dir
 fp.set_preference("browser.download.manager.showWhenStarting", False)
-fp.set_preference("browser.download.dir", download_folder)  # Set the download dir here
+fp.set_preference("browser.download.dir", newpath)  # Set the download dir here
 fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/pdf")
 
 browser = webdriver.Firefox(firefox_profile=fp)
@@ -103,8 +98,7 @@ while not login:
     except:
         if login_count == 5:
             browser.quit()
-            print "Please check login details."
-            break
+            exit("Please check login details.")
         pass
 
 # Remove .part at end of file names
